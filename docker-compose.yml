@@ -1,0 +1,44 @@
+version: "3.3"
+services:
+  db:
+    image: elestio/mysql:8.0
+    restart: always
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DATABASE_PASSWORD}
+      - MYSQL_DATABASE=easyappointments
+    ports:
+      - "172.17.0.1:3881:3306"
+  server:
+    image: alextselegidis/easyappointments:${SOFTWARE_VERSION_TAG}
+    restart: always
+    environment:
+      - BASE_URL=https://${DOMAIN}
+      - DEBUG_MODE=TRUE
+      - DB_HOST=db
+      - DB_NAME=easyappointments
+      - DB_USERNAME=root
+      - DB_PASSWORD=${DATABASE_PASSWORD}
+    ports:
+      - "172.17.0.1:18970:80"
+    volumes:
+      - ./email.php:/var/www/html/application/config/email.php
+
+  pma:
+    image: elestio/phpmyadmin:latest
+    restart: always
+    links:
+      - db:db
+    ports:
+      - "172.17.0.1:15676:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${DATABASE_PASSWORD}
+      UPLOAD_LIMIT: 500M
+      MYSQL_USERNAME: root
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+    depends_on:
+      - db
